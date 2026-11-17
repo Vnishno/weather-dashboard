@@ -1,41 +1,71 @@
-# ქალაქების შენახვა და წაკითხვა JSON ფაილიდან
+# მონაცემების შენახვა და წაკითხვა JSON ფაილებიდან
 import json
 import os
 
-from models import City
-
-CITIES_FILE = "data/cities.json"
+from models import City, WeatherRecord
 
 
-def load_cities():
-    # პირველ გაშვებაზე ფაილი ჯერ არ არსებობს
-    if not os.path.exists(CITIES_FILE):
-        return []
+class JsonStorage:
+    # მშობელი კლასი - უბრალოდ წერს და კითხულობს JSON ფაილს
 
-    try:
-        with open(CITIES_FILE, "r", encoding="utf-8") as file:
-            data = json.load(file)
-    except json.JSONDecodeError:
-        print("ქალაქების ფაილი დაზიანებულია, ვიწყებთ ცარიელი სიით")
-        return []
+    def __init__(self, file_path):
+        self.file_path = file_path
 
-    cities = []
-    for item in data:
+    def load(self):
+        if not os.path.exists(self.file_path):
+            return []
+
         try:
-            cities.append(City.from_dict(item))
-        except KeyError:
-            print("ერთი ქალაქის ჩანაწერი დაზიანებულია და გამოვტოვე")
-    return cities
+            with open(self.file_path, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except json.JSONDecodeError:
+            print(f"ფაილი {self.file_path} დაზიანებულია, ვიწყებთ ცარიელი სიით")
+            return []
+
+    def save(self, data):
+        folder = os.path.dirname(self.file_path)
+        os.makedirs(folder, exist_ok=True)
+
+        try:
+            with open(self.file_path, "w", encoding="utf-8") as file:
+                json.dump(data, file, ensure_ascii=False, indent=4)
+        except OSError as e:
+            print(f"ფაილში შენახვა ვერ მოხერხდა: {e}")
 
 
-def save_cities(cities):
-    data = []
-    for city in cities:
-        data.append(city.to_dict())
+class CityStorage(JsonStorage):
+    # შვილი კლასი - ლექსიკონებს City ობიექტებად აქცევს და პირიქით
 
-    os.makedirs("data", exist_ok=True)
-    try:
-        with open(CITIES_FILE, "w", encoding="utf-8") as file:
-            json.dump(data, file, ensure_ascii=False, indent=4)
-    except OSError as e:
-        print(f"ფაილში შენახვა ვერ მოხერხდა: {e}")
+    def load(self):
+        cities = []
+        for item in super().load():
+            try:
+                cities.append(City.from_dict(item))
+            except KeyError:
+                print("ერთი ქალაქის ჩანაწერი დაზიანებულია და გამოვტოვე")
+        return cities
+
+    def save(self, cities):
+        data = []
+        for city in cities:
+            data.append(city.to_dict())
+        super().save(data)
+
+
+class HistoryStorage(JsonStorage):
+    # იგივე პრინციპი, ოღონდ WeatherRecord ობიექტებისთვის
+
+    def load(self):
+        records = []
+        for item in super().load():
+            try:
+                records.append(WeatherRecord.from_dict(item))
+            except KeyError:
+                print("ისტორიის ერთი ჩანაწერი დაზიანებულია და გამოვტოვე")
+        return records
+
+    def save(self, records):
+        data = []
+        for record in records:
+            data.append(record.to_dict())
+        super().save(data)

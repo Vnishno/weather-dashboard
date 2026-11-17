@@ -5,9 +5,12 @@ import time
 import requests
 
 from api_client import get_city, get_weather, get_all_weather
-from storage import load_cities, save_cities
+from storage import CityStorage, HistoryStorage
 
-def check_weather():
+city_storage = CityStorage("data/cities.json")
+history_storage = HistoryStorage("data/history.json")
+
+def check_weather(history):
     city_name = input("ქალაქის სახელი: ")
 
     try:
@@ -15,6 +18,8 @@ def check_weather():
         record = get_weather(city)
         print()
         print(record)
+        history.append(record)
+        history_storage.save(history)
 
     except KeyError:
         print(f"ქალაქი '{city_name}' ვერ მოიძებნა")
@@ -27,7 +32,7 @@ def check_weather():
 
 
 
-def weather_for_my_cities(cities):
+def weather_for_my_cities(cities, history):
     if not cities:
         print("სია ცარიელია. ჯერ ქალაქი დაამატე (პუნქტი 3).")
         return
@@ -42,7 +47,9 @@ def weather_for_my_cities(cities):
         else:
             print()
             print(result)
+            history.append(result)
 
+    history_storage.save(history)
     print(f"\n(დრო: {time.time() - start:.2f} წამი)")
 
 
@@ -65,7 +72,7 @@ def add_city(cities):
             return
 
     cities.append(city)
-    save_cities(cities)
+    city_storage.save(cities)
     print(f"{city} დაემატა სიაში")
 
 
@@ -94,8 +101,30 @@ def remove_city(cities):
         return
 
     removed = cities.pop(number - 1)
-    save_cities(cities)
+    city_storage.save(cities)
     print(f"{removed} წაიშალა სიიდან") 
+
+
+
+def show_history(history):
+    if not history:
+        print("ისტორია ჯერ ცარიელია")
+        return
+
+    search = input("ქალაქის სახელი (ყველასთვის დააჭირე Enter): ").strip().lower()
+
+    found = []
+    for record in history:
+        if search in record.city_name.lower():
+            found.append(record)
+
+    if not found:
+        print("ამ ქალაქზე ჩანაწერი ვერ მოიძებნა")
+        return
+
+    print(f"\nნაპოვნია {len(found)} ჩანაწერი (ვაჩვენებ ბოლო 20-ს):")
+    for record in found[-20:]:
+        print(record.short_info())
 
 def show_menu():
     print("\n----- Weather Dashboard -----")
@@ -104,25 +133,29 @@ def show_menu():
     print("3. ქალაქის დამატება სიაში")
     print("4. ქალაქის წაშლა სიიდან")
     print("5. ჩემი ქალაქების სია")
+    print("6. ამინდის ისტორია")
     print("0. გასვლა")
 
 
 def main():
-    cities = load_cities()
+    cities = city_storage.load()
+    history = history_storage.load()
     while True:
         show_menu()
         choice = input("აირჩიე: ").strip()
 
         if choice == "1":
-            check_weather()
+            check_weather(history)
         elif choice == "2":
-            weather_for_my_cities(cities)
+            weather_for_my_cities(cities, history)
         elif choice == "3":
             add_city(cities)
         elif choice == "4":
             remove_city(cities)
         elif choice == "5":
             show_cities(cities)
+        elif choice == "6":
+            show_history(history)
         elif choice == "0":
             print("თქვენ გახვედით მენიუდან!")
             break
