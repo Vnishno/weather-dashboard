@@ -5,6 +5,38 @@ GEO_URL = "https://geocoding-api.open-meteo.com/v1/search"
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
 
+WEATHER_CODES = {
+    0: "მოწმენდილი ცა",
+    1: "ძირითადად მოწმენდილი",
+    2: "ნაწილობრივ მოღრუბლული",
+    3: "მოღრუბლული",
+    45: "ნისლი",
+    48: "ნისლი და თრთვილი",
+    51: "მსუბუქი ჟინჟღლი",
+    53: "ჟინჟღლი",
+    55: "ძლიერი ჟინჟღლი",
+    56: "ყინვიანი ჟინჟღლი",
+    57: "ძლიერი ყინვიანი ჟინჟღლი",
+    61: "მსუბუქი წვიმა",
+    63: "წვიმა",
+    65: "ძლიერი წვიმა",
+    66: "ყინვიანი წვიმა",
+    67: "ძლიერი ყინვიანი წვიმა",
+    71: "მსუბუქი თოვლი",
+    73: "თოვლი",
+    75: "ძლიერი თოვლი",
+    77: "თოვლის მარცვლები",
+    80: "მსუბუქი თავსხმა",
+    81: "თავსხმა",
+    82: "ძლიერი თავსხმა",
+    85: "თოვლჭყაპი",
+    86: "ძლიერი თოვლჭყაპი",
+    95: "ჭექა-ქუხილი",
+    96: "ჭექა-ქუხილი სეტყვით",
+    99: "ძლიერი ჭექა-ქუხილი სეტყვით",
+}
+
+
 def get_city(city_name):
     params = {"name": city_name, "count": 1, "language": "ka"}
     response = requests.get(GEO_URL, params=params, timeout=10)
@@ -29,9 +61,10 @@ def get_weather(city):
 def show_weather(city, current):
     print()
     print(f"{city['name']}, {city['country']}")
-    print(f"ტემპერატურა: {current['temperature_2m']}°C")
+    print(f"ტემპერატურაპყ: {current['temperature_2m']}°C")
     print(f"ქარი: {current['wind_speed_10m']} კმ/სთ")
-    print(f"ამინდის კოდი: {current['weather_code']}")
+    description = WEATHER_CODES.get(current["weather_code"], "უცნობი ამინდი")
+    print(f"ამინდი: {description}")
     print(f"განახლდა: {current['time']}")
 
 
