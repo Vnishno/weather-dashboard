@@ -119,21 +119,81 @@ def check_weather():
     except requests.exceptions.HTTPError as e:
         print(f"სერვერმა შეცდომა დააბრუნა: {e}")
 
-        
+
+
+
+def add_city(cities):
+    city_name = input("რომელი ქალაქი დავამატო? ")
+
+    try:
+        city = get_city(city_name)
+    except KeyError:
+        print(f"ქალაქი '{city_name}' ვერ მოიძებნა")
+        return
+    except requests.exceptions.RequestException:
+        print("API-სთან დაკავშირება ვერ მოხერხდა")
+        return
+
+    # ერთი ქალაქი ორჯერ რომ არ დაემატოს
+    for saved_city in cities:
+        if saved_city.name == city.name:
+            print(f"{city.name} უკვე სიაშია")
+            return
+
+    cities.append(city)
+    print(f"{city} დაემატა სიაში")
+
+
+def show_cities(cities):
+    if not cities:
+        print("სია ცარიელია")
+        return
+
+    for number, city in enumerate(cities, start=1):
+        print(f"{number}. {city}")
+
+
+def remove_city(cities):
+    show_cities(cities)
+    if not cities:
+        return
+
+    try:
+        number = int(input("რომელი ნომერი წავშალო? "))
+    except ValueError:
+        print("ნომერი უნდა იყოს მთელი რიცხვი")
+        return
+
+    if number < 1 or number > len(cities):
+        print(f"ასეთი ნომერი სიაში არ არის (1-{len(cities)})")
+        return
+
+    removed = cities.pop(number - 1)
+    print(f"{removed} წაიშალა სიიდან") 
 
 def show_menu():
     print("\n----- Weather Dashboard -----")
     print("1. ქალაქის ამინდის ნახვა")
+    print("3. ქალაქის დამატება სიაში")
+    print("4. ქალაქის წაშლა სიიდან")
+    print("5. ჩემი ქალაქების სია")
     print("0. გასვლა")
 
 
 def main():
+    cities = []
     while True:
         show_menu()
         choice = input("აირჩიე: ").strip()
 
         if choice == "1":
             check_weather()
+        elif choice == "3":
+            add_city(cities)
+        elif choice == "4":
+            remove_city(cities)
+        elif choice == "5":
+            show_cities(cities)
         elif choice == "0":
             print("ნახვამდის!")
             break
