@@ -1,6 +1,8 @@
 # მოდელები - ქალაქის და ამინდის ჩანაწერის კლასები
 from datetime import datetime
 
+# Open-Meteo ამინდს ტექსტით არ აბრუნებს, მხოლოდ რიცხვითი კოდით (WMO სტანდარტი)
+# ეს ლექსიკონი კოდს ქართულ ტექსტად თარგმნის (კოდები Open-Meteo-ს დოკუმენტაციიდანაა)
 WEATHER_CODES = {
     0: "მოწმენდილი ცა",
     1: "ძირითადად მოწმენდილი",
@@ -34,13 +36,16 @@ WEATHER_CODES = {
 
 
 
+# City - ქალაქის სახელი, ქვეყანა და კოორდინატები
 class City:
+    # __init__ - ობიექტის შექმნისას ავტომატურად ეშვება და ველებს ავსებს
     def __init__(self, name, country, latitude, longitude):
         self.name = name
         self.country = country
         self.latitude = latitude
         self.longitude = longitude
 
+    # to_dict - ობიექტი ლექსიკონად, რადგან JSON-ში ობიექტის პირდაპირ ჩაწერა შეუძლებელია
     def to_dict(self):
         return {
             "name": self.name,
@@ -49,13 +54,17 @@ class City:
             "longitude": self.longitude,
         }
 
+    # from_dict - პირიქით, ფაილიდან წაკითხული ლექსიკონიდან City ობიექტის შექმნა
+    # @classmethod - ობიექტი ჯერ არ არსებობს, ამიტომ კლასზე იძახება: City.from_dict(...), cls = City
     @classmethod
     def from_dict(cls, data):
         return cls(data["name"], data["country"], data["latitude"], data["longitude"])
+    # __str__ - როგორ გამოჩნდეს ობიექტი print()-ის დროს
     def __str__(self):
         return f"{self.name}, {self.country}"
 
 
+# WeatherRecord - ერთი ამინდის ჩანაწერი (ეკრანზე საჩვენებლად და ისტორიაში შესანახად)
 class WeatherRecord:
     def __init__(self, city_name, country, temperature, wind_speed, weather_code, time, saved_at=None):
         self.city_name = city_name
@@ -63,8 +72,10 @@ class WeatherRecord:
         self.temperature = temperature
         self.wind_speed = wind_speed
         self.weather_code = weather_code
+        # time - API-დან მოსული დრო, როდის განახლდა ეს მონაცემი (დაახლოებით ყოველ 15 წუთში)
         self.time = time
-        # თუ ფაილიდან ვტვირთავთ, saved_at უკვე გვაქვს, თუ არა - ახლანდელ დროს ვწერთ
+        # saved_at - როდის შემოწმდა ამინდი. ახალ ჩანაწერზე ახლანდელი დრო იწერება,
+        # ფაილიდან ჩატვირთვისას კი ძველი დრო რჩება (or - თუ saved_at None-ია, აიღებს მარჯვენა მხარეს)
         self.saved_at = saved_at or datetime.now().strftime("%Y-%m-%d %H:%M")
 
     def to_dict(self):
@@ -90,14 +101,18 @@ class WeatherRecord:
             data["saved_at"],
         )
 
+    # short_info - ისტორიაში ერთ ხაზად გამოსაჩენად
+    # :<12 და :>5 - სვეტების გასწორება, რომ ცხრილივით ლამაზად გამოჩნდეს
     def short_info(self):
-        # ისტორიაში ერთ ხაზად გამოსაჩენად
         return f"{self.saved_at} | {self.city_name:<12} | {self.temperature:>5}°C | {self.description}"
     
+    # @property - მეთოდი, რომელიც ფრჩხილების გარეშე იკითხება (record.description)
+    # .get() - თუ კოდი ლექსიკონში არ არის, KeyError-ის ნაცვლად "უცნობი ამინდი" დაბრუნდება
     @property
     def description(self):
         return WEATHER_CODES.get(self.weather_code, "უცნობი ამინდი")
 
+    # \n - ახალ ხაზზე გადასვლა, replace('T', ' ') - "2026-11-17T16:00" ხდება "2026-11-17 16:00"
     def __str__(self):
         return (
             f"{self.city_name}, {self.country}\n"
