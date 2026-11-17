@@ -1,9 +1,10 @@
+import json
+import os
 import requests
-
 
 GEO_URL = "https://geocoding-api.open-meteo.com/v1/search"
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
-
+CITIES_FILE = "data/cities.json"
 
 WEATHER_CODES = {
     0: "მოწმენდილი ცა",
@@ -45,6 +46,17 @@ class City:
         self.latitude = latitude
         self.longitude = longitude
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "country": self.country,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(data["name"], data["country"], data["latitude"], data["longitude"])
     def __str__(self):
         return f"{self.name}, {self.country}"
 
@@ -101,6 +113,40 @@ def get_weather(city):
     )
 
 
+
+def load_cities():
+    # პირველ გაშვებაზე ფაილი ჯერ არ არსებობს
+    if not os.path.exists(CITIES_FILE):
+        return []
+
+    try:
+        with open(CITIES_FILE, "r", encoding="utf-8") as file:
+            data = json.load(file)
+    except json.JSONDecodeError:
+        print("ქალაქების ფაილი დაზიანებულია, ვიწყებთ ცარიელი სიით")
+        return []
+
+    cities = []
+    for item in data:
+        try:
+            cities.append(City.from_dict(item))
+        except KeyError:
+            print("ერთი ქალაქის ჩანაწერი დაზიანებულია და გამოვტოვე")
+    return cities
+
+
+def save_cities(cities):
+    data = []
+    for city in cities:
+        data.append(city.to_dict())
+
+    os.makedirs("data", exist_ok=True)
+    try:
+        with open(CITIES_FILE, "w", encoding="utf-8") as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
+    except OSError as e:
+        print(f"ფაილში შენახვა ვერ მოხერხდა: {e}")
+
 def check_weather():
     city_name = input("ქალაქის სახელი: ")
 
@@ -141,6 +187,7 @@ def add_city(cities):
             return
 
     cities.append(city)
+    save_cities(cities)
     print(f"{city} დაემატა სიაში")
 
 
@@ -169,6 +216,7 @@ def remove_city(cities):
         return
 
     removed = cities.pop(number - 1)
+    save_cities(cities)
     print(f"{removed} წაიშალა სიიდან") 
 
 def show_menu():
@@ -181,7 +229,7 @@ def show_menu():
 
 
 def main():
-    cities = []
+    cities = load_cities()
     while True:
         show_menu()
         choice = input("აირჩიე: ").strip()
