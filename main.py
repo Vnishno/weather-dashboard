@@ -34,18 +34,45 @@ def show_weather(city, current):
     print(f"ამინდის კოდი: {current['weather_code']}")
     print(f"განახლდა: {current['time']}")
 
-city_name = input("ქალაქის სახელი: ")
 
-try:
-    city = get_city(city_name)
-    current = get_weather(city)
-    show_weather(city, current)
+def check_weather():
+    city_name = input("ქალაქის სახელი: ")
 
-except KeyError:
-    print(f"ქალაქი '{city_name}' ვერ მოიძებნა")
-except requests.exceptions.ConnectionError:
-    print("ინტერნეტთან კავშირი ვერ მოხერხდა")
-except requests.exceptions.Timeout:
-    print("სერვერმა დიდხანს არ უპასუხა")
-except requests.exceptions.HTTPError as e:
-    print(f"სერვერმა შეცდომა დააბრუნა: {e}")
+    try:
+        city = get_city(city_name)
+        current = get_weather(city)
+        show_weather(city, current)
+
+    except KeyError:
+        print(f"ქალაქი '{city_name}' ვერ მოიძებნა")
+    except requests.exceptions.ConnectionError:
+        print("ინტერნეტთან კავშირი ვერ მოხერხდა")
+    except requests.exceptions.Timeout:
+        print("სერვერმა დიდხანს არ უპასუხა")
+    except requests.exceptions.HTTPError as e:
+        print(f"სერვერმა შეცდომა დააბრუნა: {e}")
+
+        
+
+def show_menu():
+    print("\n----- Weather Dashboard -----")
+    print("1. ქალაქის ამინდის ნახვა")
+    print("0. გასვლა")
+
+
+def main():
+    while True:
+        show_menu()
+        choice = input("აირჩიე: ").strip()
+
+        if choice == "1":
+            check_weather()
+        elif choice == "0":
+            print("ნახვამდის!")
+            break
+        else:
+            print("ასეთი პუნქტი არ არსებობს, სცადე თავიდან")
+
+
+if __name__ == "__main__":
+    main()
