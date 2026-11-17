@@ -6,6 +6,7 @@ import requests
 
 from api_client import get_city, get_weather, get_all_weather
 from storage import CityStorage, HistoryStorage
+from city_manager import CityManager
 
 city_storage = CityStorage("data/cities.json")
 history_storage = HistoryStorage("data/history.json")
@@ -53,7 +54,7 @@ def weather_for_my_cities(cities, history):
     print(f"\n(დრო: {time.time() - start:.2f} წამი)")
 
 
-def add_city(cities):
+def add_city(manager):
     city_name = input("რომელი ქალაქი დავამატო? ")
 
     try:
@@ -65,15 +66,11 @@ def add_city(cities):
         print("API-სთან დაკავშირება ვერ მოხერხდა")
         return
 
-    # ერთი ქალაქი ორჯერ რომ არ დაემატოს
-    for saved_city in cities:
-        if saved_city.name == city.name:
-            print(f"{city.name} უკვე სიაშია")
-            return
-
-    cities.append(city)
-    city_storage.save(cities)
-    print(f"{city} დაემატა სიაში")
+    # ერთი ქალაქი ორჯერ ვერ დაემატება
+    if manager.add_city(city):
+        print(f"{city} დაემატა სიაში")
+    else:
+        print(f"{city.name} უკვე სიაშია")
 
 
 def show_cities(cities):
@@ -85,9 +82,9 @@ def show_cities(cities):
         print(f"{number}. {city}")
 
 
-def remove_city(cities):
-    show_cities(cities)
-    if not cities:
+def remove_city(manager):
+    show_cities(manager.cities)
+    if not manager.cities:
         return
 
     try:
@@ -96,13 +93,11 @@ def remove_city(cities):
         print("ნომერი უნდა იყოს მთელი რიცხვი")
         return
 
-    if number < 1 or number > len(cities):
-        print(f"ასეთი ნომერი სიაში არ არის (1-{len(cities)})")
-        return
-
-    removed = cities.pop(number - 1)
-    city_storage.save(cities)
-    print(f"{removed} წაიშალა სიიდან") 
+    removed = manager.remove_city(number)
+    if removed is None:
+        print(f"ასეთი ნომერი სიაში არ არის (1-{len(manager.cities)})")
+    else:
+        print(f"{removed} წაიშალა სიიდან")
 
 
 
@@ -138,7 +133,7 @@ def show_menu():
 
 
 def main():
-    cities = city_storage.load()
+    manager = CityManager(city_storage)
     history = history_storage.load()
     while True:
         show_menu()
@@ -147,13 +142,13 @@ def main():
         if choice == "1":
             check_weather(history)
         elif choice == "2":
-            weather_for_my_cities(cities, history)
+            weather_for_my_cities(manager.cities, history)
         elif choice == "3":
-            add_city(cities)
+            add_city(manager)
         elif choice == "4":
-            remove_city(cities)
+            remove_city(manager)
         elif choice == "5":
-            show_cities(cities)
+            show_cities(manager.cities)
         elif choice == "6":
             show_history(history)
         elif choice == "0":
