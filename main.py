@@ -1,39 +1,45 @@
 import requests
 
-city_name = input("ქალაქის სახელი: ")
 
-try:
-    # 1) ქალაქის სახელით კოორდინატებს ვიღებთ
-    geo_url = "https://geocoding-api.open-meteo.com/v1/search"
-    geo_params = {"name": city_name, "count": 1, "language": "ka"}
+GEO_URL = "https://geocoding-api.open-meteo.com/v1/search"
+WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
-    geo_response = requests.get(geo_url, params=geo_params, timeout=10)
-    geo_response.raise_for_status()
-    geo_data = geo_response.json()
 
-    city = geo_data["results"][0]
+def get_city(city_name):
+    params = {"name": city_name, "count": 1, "language": "ka"}
+    response = requests.get(GEO_URL, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+    return data["results"][0]
 
-    # 2) კოორდინატებით ამინდს ვიღებთ
-    weather_url = "https://api.open-meteo.com/v1/forecast"
-    weather_params = {
+
+def get_weather(city):
+    params = {
         "latitude": city["latitude"],
         "longitude": city["longitude"],
         "current": "temperature_2m,wind_speed_10m,weather_code",
         "timezone": "auto",
     }
+    response = requests.get(WEATHER_URL, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+    return data["current"]
 
-    weather_response = requests.get(weather_url, params=weather_params, timeout=10)
-    weather_response.raise_for_status()
-    weather_data = weather_response.json()
 
-    current = weather_data["current"]
-
+def show_weather(city, current):
     print()
     print(f"{city['name']}, {city['country']}")
     print(f"ტემპერატურა: {current['temperature_2m']}°C")
     print(f"ქარი: {current['wind_speed_10m']} კმ/სთ")
     print(f"ამინდის კოდი: {current['weather_code']}")
     print(f"განახლდა: {current['time']}")
+
+city_name = input("ქალაქის სახელი: ")
+
+try:
+    city = get_city(city_name)
+    current = get_weather(city)
+    show_weather(city, current)
 
 except KeyError:
     print(f"ქალაქი '{city_name}' ვერ მოიძებნა")
