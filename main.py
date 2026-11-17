@@ -37,35 +37,68 @@ WEATHER_CODES = {
 }
 
 
+
+class City:
+    def __init__(self, name, country, latitude, longitude):
+        self.name = name
+        self.country = country
+        self.latitude = latitude
+        self.longitude = longitude
+
+    def __str__(self):
+        return f"{self.name}, {self.country}"
+
+
+class WeatherRecord:
+    def __init__(self, city_name, country, temperature, wind_speed, weather_code, time):
+        self.city_name = city_name
+        self.country = country
+        self.temperature = temperature
+        self.wind_speed = wind_speed
+        self.weather_code = weather_code
+        self.time = time
+
+    @property
+    def description(self):
+        return WEATHER_CODES.get(self.weather_code, "უცნობი ამინდი")
+
+    def __str__(self):
+        return (
+            f"{self.city_name}, {self.country}\n"
+            f"   ტემპერატურა: {self.temperature}°C\n"
+            f"   ქარი: {self.wind_speed} კმ/სთ\n"
+            f"   ამინდი: {self.description}\n"
+            f"   განახლდა: {self.time.replace('T', ' ')}"
+        )
+
 def get_city(city_name):
     params = {"name": city_name, "count": 1, "language": "ka"}
     response = requests.get(GEO_URL, params=params, timeout=10)
     response.raise_for_status()
     data = response.json()
-    return data["results"][0]
+    result = data["results"][0]
+    return City(result["name"], result["country"], result["latitude"], result["longitude"])
 
 
 def get_weather(city):
     params = {
-        "latitude": city["latitude"],
-        "longitude": city["longitude"],
+        "latitude": city.latitude,
+        "longitude": city.longitude,
         "current": "temperature_2m,wind_speed_10m,weather_code",
         "timezone": "auto",
     }
     response = requests.get(WEATHER_URL, params=params, timeout=10)
     response.raise_for_status()
     data = response.json()
-    return data["current"]
-
-
-def show_weather(city, current):
-    print()
-    print(f"{city['name']}, {city['country']}")
-    print(f"ტემპერატურაპყ: {current['temperature_2m']}°C")
-    print(f"ქარი: {current['wind_speed_10m']} კმ/სთ")
-    description = WEATHER_CODES.get(current["weather_code"], "უცნობი ამინდი")
-    print(f"ამინდი: {description}")
-    print(f"განახლდა: {current['time']}")
+    current = data["current"]
+    return WeatherRecord(
+        city.name,
+        city.country,
+        current["temperature_2m"],
+        current["wind_speed_10m"],
+        current["weather_code"],
+        current["time"],
+    )
 
 
 def check_weather():
@@ -73,8 +106,9 @@ def check_weather():
 
     try:
         city = get_city(city_name)
-        current = get_weather(city)
-        show_weather(city, current)
+        record = get_weather(city)
+        print()
+        print(record)
 
     except KeyError:
         print(f"ქალაქი '{city_name}' ვერ მოიძებნა")
