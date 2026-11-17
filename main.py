@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import requests
 
 GEO_URL = "https://geocoding-api.open-meteo.com/v1/search"
@@ -167,6 +168,23 @@ def check_weather():
 
 
 
+def weather_for_my_cities(cities):
+    if not cities:
+        print("სია ცარიელია. ჯერ ქალაქი დაამატე (პუნქტი 3).")
+        return
+
+    start = time.time()
+
+    for city in cities:
+        try:
+            record = get_weather(city)
+            print()
+            print(record)
+        except requests.exceptions.RequestException:
+            print(f"\n{city} - ამინდი ვერ მივიღე")
+
+    print(f"\n(დრო: {time.time() - start:.2f} წამი)")
+
 
 def add_city(cities):
     city_name = input("რომელი ქალაქი დავამატო? ")
@@ -222,6 +240,7 @@ def remove_city(cities):
 def show_menu():
     print("\n----- Weather Dashboard -----")
     print("1. ქალაქის ამინდის ნახვა")
+    print("2. ჩემი ქალაქების ამინდი (ყველა ერთად)")
     print("3. ქალაქის დამატება სიაში")
     print("4. ქალაქის წაშლა სიიდან")
     print("5. ჩემი ქალაქების სია")
@@ -236,6 +255,8 @@ def main():
 
         if choice == "1":
             check_weather()
+        elif choice == "2":
+            weather_for_my_cities(cities)
         elif choice == "3":
             add_city(cities)
         elif choice == "4":
