@@ -5,12 +5,13 @@ import aiohttp
 import requests
 
 from models import City, WeatherRecord
+from decorators import retry
 
 
 GEO_URL = "https://geocoding-api.open-meteo.com/v1/search"
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
-
+@retry(times=3, delay=1)
 def get_city(city_name):
     params = {"name": city_name, "count": 1, "language": "ka"}
     response = requests.get(GEO_URL, params=params, timeout=10)
@@ -39,7 +40,7 @@ def make_record(city, current):
         current["time"],
     )
 
-
+@retry(times=3, delay=1)
 def get_weather(city):
     response = requests.get(WEATHER_URL, params=weather_params(city), timeout=10)
     response.raise_for_status()

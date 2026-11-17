@@ -1,12 +1,12 @@
 # Weather Dashboard - მთავარი ფაილი, მენიუ
 import asyncio
-import time
 
 import requests
 
 from api_client import get_city, get_weather, get_all_weather
 from storage import CityStorage, HistoryStorage
 from city_manager import CityManager
+from decorators import timer
 
 city_storage = CityStorage("data/cities.json")
 history_storage = HistoryStorage("data/history.json")
@@ -32,13 +32,11 @@ def check_weather(history):
         print(f"სერვერმა შეცდომა დააბრუნა: {e}")
 
 
-
+@timer
 def weather_for_my_cities(cities, history):
     if not cities:
         print("სია ცარიელია. ჯერ ქალაქი დაამატე (პუნქტი 3).")
         return
-
-    start = time.time()
 
     results = asyncio.run(get_all_weather(cities))
 
@@ -51,7 +49,6 @@ def weather_for_my_cities(cities, history):
             history.append(result)
 
     history_storage.save(history)
-    print(f"\n(დრო: {time.time() - start:.2f} წამი)")
 
 
 def add_city(manager):
